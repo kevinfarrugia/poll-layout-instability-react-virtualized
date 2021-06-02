@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html {{{ htmlAttributes }}}>
+	<head>
+		{{{ head }}}
+
+		<% if (!process.env.IS_DEVELOPMENT) { %>
+			<% for (let index in htmlWebpackPlugin.files.css) { %>
+					<link rel="stylesheet" href=<%= `${htmlWebpackPlugin.files.css[index]}` %>>
+			<% } %>
+		<% } %>
+		
+	</head>
+	<body {{{ bodyAttributes }}}>
+		<div id="root">{{{ html }}}</div>			
+		<script>
+			const scripts = [];
+
+			<% for (let index in htmlWebpackPlugin.files.js) { %>
+				<% if (!/polyfills/.test(htmlWebpackPlugin.files.js[index])) { %>
+					scripts.push("<%= `${htmlWebpackPlugin.files.js[index]}` %>");
+				<% } %>
+			<% } %>
+
+			function isModernBrowser() {
+				  return (
+						"Promise" in window &&
+						"startsWith" in String.prototype &&
+            "endsWith" in String.prototype &&
+            "includes" in Array.prototype &&
+            "assign" in Object &&
+            "keys" in Object
+					);
+			}
+
+			if (!isModernBrowser()) {
+				scripts.unshift("<%= `${htmlWebpackPlugin.files.js.find(n => /polyfills/.test(n))}` %>"); 
+			}
+
+			scripts.forEach((n) => {
+				const scriptEl = document.createElement('script');
+				scriptEl.src = n;
+				scriptEl.async = !/polyfills/.test(n);
+				document.head.appendChild(scriptEl);
+			});
+		</script>	
+	</body>
+</html>

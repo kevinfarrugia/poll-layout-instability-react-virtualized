@@ -1,18 +1,10 @@
-import React, { useEffect, useState } from "react";
+import * as React from "react";
 
 const ListItem = ({ img, text, style }) => {
-  const [isNew, setIsNew] = useState(true);
-
-  useEffect(() => {
-    setIsNew(false);
-  }, [setIsNew]);
-
   return (
     <li style={style} className="mb-4">
       <figure
-        className={`bg-gray-200 rounded-xl p-4 shadow-md transition duration-1000 ${
-          isNew ? "bg-blue-300" : ""
-        }`}
+        className="bg-gray-200 rounded-xl p-4 shadow-md transition duration-1000"
         style={{ height: "292px" }}
       >
         <img

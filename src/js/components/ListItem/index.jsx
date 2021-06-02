@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 
-const ListItem = ({ img, text }) => {
+const ListItem = ({ img, text, style }) => {
   const [isNew, setIsNew] = useState(true);
 
   useEffect(() => {
@@ -8,11 +8,12 @@ const ListItem = ({ img, text }) => {
   }, [setIsNew]);
 
   return (
-    <li>
+    <li style={style} className="mb-4">
       <figure
         className={`bg-gray-200 rounded-xl p-4 shadow-md transition duration-1000 ${
           isNew ? "bg-blue-300" : ""
         }`}
+        style={{ height: "292px" }}
       >
         <img
           className="w-24 h-24 rounded-full mx-auto"

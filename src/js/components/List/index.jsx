@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   AutoSizer,
   List as VirtualList,
@@ -13,6 +13,9 @@ const LOREM_IPSUM =
   "Lorem ipsum dolor sit amet consectetur adipisicing elit. Modi deserunt, molestiae quidem a.";
 
 const List = () => {
+  const listRef = useRef(null);
+  const heightRef = useRef(0);
+
   const [list, setList] = useState([
     {
       id: nanoid(),
@@ -54,23 +57,40 @@ const List = () => {
     <section>
       <ul id="list" className="mx-auto max-w-sm p-4">
         <WindowScroller>
-          {({ height, isScrolling, onChildScroll, scrollTop }) => (
-            <AutoSizer disableHeight>
-              {({ width }) => (
-                <VirtualList
-                  autoHeight
-                  height={height}
-                  isScrolling={isScrolling}
-                  onScroll={onChildScroll}
-                  rowCount={list.length}
-                  rowHeight={308}
-                  rowRenderer={rowRenderer}
-                  scrollTop={scrollTop}
-                  width={width}
-                />
-              )}
-            </AutoSizer>
-          )}
+          {({ height, isScrolling, onChildScroll, scrollTop }) => {
+            let myScrollTop = scrollTop;
+            if (listRef.current && !isScrolling) {
+              // is there a better way to retrieve the clientHeight
+              const newHeight =
+                listRef.current?.Grid._scrollingContainer?.clientHeight;
+
+              // if the user has scrolled down maintain the scroll position
+              if (scrollTop > 0 && heightRef?.current > 0 && newHeight) {
+                myScrollTop = scrollTop + newHeight - heightRef.current;
+              }
+
+              heightRef.current = newHeight;
+            }
+
+            return (
+              <AutoSizer disableHeight>
+                {({ width }) => (
+                  <VirtualList
+                    ref={listRef}
+                    autoHeight
+                    height={height}
+                    onScroll={onChildScroll}
+                    isScrolling={isScrolling}
+                    rowCount={list.length}
+                    rowHeight={308}
+                    rowRenderer={rowRenderer}
+                    scrollTop={myScrollTop}
+                    width={width}
+                  />
+                )}
+              </AutoSizer>
+            );
+          }}
         </WindowScroller>
       </ul>
     </section>

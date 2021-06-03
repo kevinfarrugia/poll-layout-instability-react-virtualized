@@ -8,35 +8,65 @@ import {
 
 import ListItem from "../ListItem";
 
+const createItem = (text, isNew) => ({
+  id: nanoid(),
+  img: Math.ceil(Math.random() * 8),
+  text,
+  isNew,
+});
 const INTERVAL = 4000;
-const LOREM_IPSUM =
-  "Lorem ipsum dolor sit amet consectetur adipisicing elit. Modi deserunt, molestiae quidem a.";
+const INITIAL_DATA = Array(100)
+  .fill()
+  .map((_, i) => createItem(`index: ${i}`, false));
 
 const List = () => {
-  const listRef = useRef(null);
-  const heightRef = useRef(0);
-
-  const [list, setList] = useState([
-    {
-      id: nanoid(),
-      img: 0,
-      text: LOREM_IPSUM,
-    },
-  ]);
+  const [list, setList] = useState(INITIAL_DATA);
+  const visibleStartIndex = useRef(0);
+  const visibleStopIndex = useRef(0);
 
   // mimicks polling for data from an API
   useEffect(() => {
-    setTimeout(() => {
-      setList([
-        {
-          id: nanoid(),
-          img: Math.ceil(Math.random() * 8),
-          text: LOREM_IPSUM.slice(Math.ceil(Math.random() * 100)),
-        },
-        ...list,
+    setInterval(() => {
+      const insertionIndex = 0;
+      setList((oldList) => [
+        createItem(
+          "I am new!",
+          !(
+            insertionIndex >= visibleStartIndex.current &&
+            insertionIndex <= visibleStopIndex.current
+          )
+        ),
+        ...oldList,
       ]);
     }, INTERVAL);
-  }, [list]);
+  }, []);
+
+  const listWithoutNewItems = list.filter((item) => !item.isNew);
+  const newItemIndices = list.reduce((acc, curr, i) => {
+    if (curr.isNew) {
+      acc.push(i);
+    }
+    return acc;
+  }, []);
+
+  const onRowsRendered = ({ startIndex, stopIndex }) => {
+    const visibleNewItems = newItemIndices.filter(
+      (i) => i <= stopIndex && i >= startIndex
+    );
+
+    visibleStartIndex.current = startIndex;
+    visibleStopIndex.current = stopIndex;
+
+    if (visibleNewItems.length) {
+      const newItems = list
+        .filter((item, i) => !item.isNew || visibleNewItems.includes(i))
+        .map((item) => ({
+          ...item,
+          isNew: false,
+        }));
+      setList(newItems);
+    }
+  };
 
   const rowRenderer = ({
     key, // Unique key within array of rows
@@ -48,8 +78,8 @@ const List = () => {
     <ListItem
       key={key}
       style={style}
-      img={list[index].img}
-      text={list[index].text}
+      img={listWithoutNewItems[index].img}
+      text={listWithoutNewItems[index].text}
     />
   );
 
@@ -57,40 +87,24 @@ const List = () => {
     <section>
       <ul id="list" className="mx-auto max-w-sm p-4">
         <WindowScroller>
-          {({ height, isScrolling, onChildScroll, scrollTop }) => {
-            let myScrollTop = scrollTop;
-            if (listRef.current && !isScrolling) {
-              // is there a better way to retrieve the clientHeight
-              const newHeight =
-                listRef.current?.Grid._scrollingContainer?.clientHeight;
-
-              // if the user has scrolled down maintain the scroll position
-              if (scrollTop > 0 && heightRef?.current > 0 && newHeight) {
-                myScrollTop = scrollTop + newHeight - heightRef.current;
-              }
-
-              heightRef.current = newHeight;
-            }
-
-            return (
-              <AutoSizer disableHeight>
-                {({ width }) => (
-                  <VirtualList
-                    ref={listRef}
-                    autoHeight
-                    height={height}
-                    onScroll={onChildScroll}
-                    isScrolling={isScrolling}
-                    rowCount={list.length}
-                    rowHeight={308}
-                    rowRenderer={rowRenderer}
-                    scrollTop={myScrollTop}
-                    width={width}
-                  />
-                )}
-              </AutoSizer>
-            );
-          }}
+          {({ height, isScrolling, onChildScroll, scrollTop }) => (
+            <AutoSizer disableHeight>
+              {({ width }) => (
+                <VirtualList
+                  autoHeight
+                  height={height}
+                  isScrolling={isScrolling}
+                  onScroll={onChildScroll}
+                  rowCount={listWithoutNewItems.length}
+                  rowHeight={308}
+                  rowRenderer={rowRenderer}
+                  scrollTop={scrollTop}
+                  width={width}
+                  onRowsRendered={onRowsRendered}
+                />
+              )}
+            </AutoSizer>
+          )}
         </WindowScroller>
       </ul>
     </section>
